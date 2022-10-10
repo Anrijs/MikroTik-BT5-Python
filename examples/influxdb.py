@@ -49,22 +49,7 @@ def mkpt(device, key, beacon, timestr):
     return point
 
 def on_scan(beacon, device):
-    print("---------------------------")
     print(f"  {device.address}")
-    if beacon.flags:
-        print("TRIGGER")
-    print("---------------------------")
-
-    if beacon.hasTemperature():
-        print(f"  temperature:  {beacon.temperature:.2f} \u00b0C")
-    print( "  acceleration:")
-    print(f"      x:         {beacon.acceleration.x:.2f} m/s^2")
-    print(f"      y:         {beacon.acceleration.y:.2f} m/s^2")
-    print(f"      z:         {beacon.acceleration.z:.2f} m/s^2")
-    print(f"  uptime:        {beacon.uptime}")
-    print(f"  battery:       {beacon.battery} %")
-    print()
-
     pts = []
 
     client = InfluxDBClient(server_ip, server_port, influx_user, influx_pwd, influx_db)
