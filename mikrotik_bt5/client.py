@@ -48,8 +48,23 @@ class MikrotikBeacon(BaseBeacon):
     flags: int = -1
     battery: int = -1
 
-    def __init__(self):
+    def __init__(self, device = None, ad_data = None):
         super().__init__(BeaconType.MIKROTIK.value)
+
+        if device and ad_data and MikrotikBT5.MIKROTIK_ID in ad_data.manufacturer_data:
+            raw_bytes = ad_data.manufacturer_data[MikrotikBT5.MIKROTIK_ID]
+
+            version = int(raw_bytes[0])
+            value_fmt = None
+
+            if version == 0:
+                value_fmt = "<BBHhhhbIBB"
+            elif version == 1:
+                value_fmt = "<BBHhhhhIBB"
+
+            if value_fmt:
+                value = struct.unpack(value_fmt, raw_bytes)
+                self.decode(value)
 
     def decode(self, value: tuple):
         self.version = value[0]
@@ -133,22 +148,8 @@ class MikrotikBT5:
         """Processes Mikrotik advertisement data"""
 
         if self.MIKROTIK_ID in ad_data.manufacturer_data:
-            raw_bytes = ad_data.manufacturer_data[self.MIKROTIK_ID]
-
-            version = int(raw_bytes[0])
-            beacon = None
-            value_fmt = None
-
-            if version == 0:
-                value_fmt = "<BBHhhhbIBB"
-            elif version == 1:
-                value_fmt = "<BBHhhhhIBB"
-
-            if value_fmt:
-                value = struct.unpack(value_fmt, raw_bytes)
-                beacon = MikrotikBeacon()
-                beacon.decode(value)
-                beacon.rssi = device.rssi
+            beacon = MikrotikBeacon(device, ad_data)
+            if beacon.version != -1:
                 dev = self._register_beacon(device, beacon)
                 self.on_scan(beacon, dev)
 
