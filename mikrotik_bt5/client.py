@@ -38,6 +38,7 @@ class MikrotikBeacon(BaseBeacon):
             return ms
 
     name: str = "MikroTik BT5"
+    address: str | None = None
     version: int | None = None
     udata: int | None = None
     salt: int | None = None
@@ -46,6 +47,7 @@ class MikrotikBeacon(BaseBeacon):
     uptime: int | None = None
     flags: int | None = None
     battery: int | None = None
+    rssi: int | None = None
 
     def __init__(self, device = None, ad_data = None):
         super().__init__(BeaconType.MIKROTIK.value)
@@ -53,6 +55,9 @@ class MikrotikBeacon(BaseBeacon):
         if device and ad_data and MikrotikBT5.MIKROTIK_ID in ad_data.manufacturer_data:
             if device.name:
                 self.name = device.name
+
+            self.address = device.address
+            self.rssi = getattr(ad_data, 'rssi', None)
 
             raw_bytes = ad_data.manufacturer_data[MikrotikBT5.MIKROTIK_ID]
 
