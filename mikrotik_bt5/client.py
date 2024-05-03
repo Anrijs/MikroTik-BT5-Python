@@ -1,4 +1,3 @@
-import asyncio
 import struct
 import math
 from enum import IntEnum
@@ -38,20 +37,23 @@ class MikrotikBeacon(BaseBeacon):
             ms = math.sqrt(xx + yy + zz)
             return ms
 
-
-    version: int = -1
-    udata: int = 0
-    salt: int = 0
-    acceleration = Acceleration()
-    temperature: float = -1
-    uptime: int = -1
-    flags: int = -1
-    battery: int = -1
+    name: str = "MikroTik BT5"
+    version: int | None = None
+    udata: int | None = None
+    salt: int | None = None
+    acceleration: Acceleration | None = None
+    temperature: float | None = None
+    uptime: int | None = None
+    flags: int | None = None
+    battery: int | None = None
 
     def __init__(self, device = None, ad_data = None):
         super().__init__(BeaconType.MIKROTIK.value)
 
         if device and ad_data and MikrotikBT5.MIKROTIK_ID in ad_data.manufacturer_data:
+            if device.name:
+                self.name = device.name
+
             raw_bytes = ad_data.manufacturer_data[MikrotikBT5.MIKROTIK_ID]
 
             version = int(raw_bytes[0])
@@ -61,6 +63,10 @@ class MikrotikBeacon(BaseBeacon):
                 value_fmt = "<BBHhhhbIBB"
             elif version == 1:
                 value_fmt = "<BBHhhhhIBB"
+            else:
+                self.version = None
+                return
+                # invalid/unknown version
 
             if value_fmt:
                 value = struct.unpack(value_fmt, raw_bytes)
@@ -71,6 +77,7 @@ class MikrotikBeacon(BaseBeacon):
         self.udata   = value[1]
         self.salt    = value[2]
 
+        self.acceleration = MikrotikBeacon.Acceleration()
         self.acceleration.x = value[3] / 256.0
         self.acceleration.y = value[4] / 256.0
         self.acceleration.z = value[5] / 256.0
