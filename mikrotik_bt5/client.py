@@ -1,115 +1,6 @@
-import struct
-import math
-from enum import IntEnum
-
 from bleak import BleakScanner
-from bleak.backends.device import BLEDevice
-from dataclasses import dataclass, field
+from .beacon import MikrotikBeacon
 
-
-class BeaconType(IntEnum):
-    MIKROTIK = 1
-
-
-class BaseBeacon:
-    rssi: int = -1
-
-    def __init__(self, type):
-        self.type = type;
-
-    def toDict(self):
-        return {}
-
-class MikrotikBeacon(BaseBeacon):
-    """dataclass to store mikrotik beacon data"""
-
-    @dataclass
-    class Acceleration:
-        x: float = 0
-        y: float = 0
-        z: float = 0
-
-        def magnitude(self):
-            xx = self.x * self.x
-            yy = self.y * self.y
-            zz = self.z * self.z
-
-            ms = math.sqrt(xx + yy + zz)
-            return ms
-
-    name: str = "MikroTik BT5"
-    address: str | None = None
-    version: int | None = None
-    udata: int | None = None
-    salt: int | None = None
-    acceleration: Acceleration | None = None
-    temperature: float | None = None
-    uptime: int | None = None
-    flags: int | None = None
-    battery: int | None = None
-    rssi: int | None = None
-
-    def __init__(self, device = None, ad_data = None):
-        super().__init__(BeaconType.MIKROTIK.value)
-
-        if device and ad_data and MikrotikBT5.MIKROTIK_ID in ad_data.manufacturer_data:
-            if device.name:
-                self.name = device.name
-
-            self.address = device.address
-            self.rssi = getattr(ad_data, 'rssi', None)
-
-            raw_bytes = ad_data.manufacturer_data[MikrotikBT5.MIKROTIK_ID]
-
-            version = int(raw_bytes[0])
-            value_fmt = None
-
-            if version == 0:
-                value_fmt = "<BBHhhhbIBB"
-            elif version == 1:
-                value_fmt = "<BBHhhhhIBB"
-            else:
-                self.version = None
-                return
-                # invalid/unknown version
-
-            if value_fmt:
-                value = struct.unpack(value_fmt, raw_bytes)
-                self.decode(value)
-
-    def decode(self, value: tuple):
-        self.version = value[0]
-        self.udata   = value[1]
-        self.salt    = value[2]
-
-        self.acceleration = MikrotikBeacon.Acceleration()
-        self.acceleration.x = value[3] / 256.0
-        self.acceleration.y = value[4] / 256.0
-        self.acceleration.z = value[5] / 256.0
-
-        self.temperature = value[6] / 256.0
-        self.uptime = value[7]
-        self.flags = value[8]
-        self.battery = value[9]
-
-    def hasTemperature(self):
-        return self.temperature != -128.0
-
-    def toDict(self):
-        return {
-            "version": self.version,
-            "acceleration": {
-                "x": self.acceleration.x,
-                "y": self.acceleration.y,
-                "z": self.acceleration.z
-            },
-            "temperature": self.temperature,
-            "uptime": self.uptime,
-            "flags": self.flags,
-            "battery": self.battery
-        }
-
-@dataclass
 class BT5Device:
     address: str = None
     beacons = {}
@@ -130,8 +21,6 @@ class BT5Device:
 
 class MikrotikBT5:
     """Mikrotik BT5 Scanner class - scan advertisements and process data, if available"""
-
-    MIKROTIK_ID = 0x094F
 
     history_size = 10
 
@@ -155,11 +44,9 @@ class MikrotikBT5:
 
         return dev
 
-
     def _process_advertisement(self, device, ad_data):
         """Processes Mikrotik advertisement data"""
-
-        if self.MIKROTIK_ID in ad_data.manufacturer_data:
+        if MikrotikBeacon.MIKROTIK_ID in ad_data.manufacturer_data:
             beacon = MikrotikBeacon(device, ad_data)
             if beacon.version != -1:
                 dev = self._register_beacon(device, beacon)
@@ -178,7 +65,6 @@ class MikrotikBT5:
         )
 
         await self.scanner.start()
-
 
     async def stop_scan(self):
         await self.scanner.stop()

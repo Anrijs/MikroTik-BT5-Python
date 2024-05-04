@@ -1,3 +1,4 @@
-from mikrotik_bt5.client import MikrotikBT5, MikrotikBeacon
+from .client import MikrotikBT5
+from .beacon import MikrotikBeacon
 
 name = "mikrtoik_bt5"
