@@ -19,47 +19,47 @@ influx_pwd = ""
 influx_db = "Sandbox"
 
 def mkpt(device, key, beacon, timestr):
-    t  = beacon.temperature
-    ax = beacon.acceleration.x
-    ay = beacon.acceleration.y
-    az = beacon.acceleration.z
-    u  = beacon.uptime
-    b = beacon.battery
-    ri = beacon.rssi
-
     point = {
         "measurement": key,
         "tags": {
             "device": device,
         },
         "time": timestr,
-        "fields": {
-            "accel_x": ax,
-            "accel_y": ay,
-            "accel_z": az,
-            "uptime": u,
-            "battery": b,
-            "rssi": ri,
-        }
+        "fields": {}
     }
 
-    if beacon.hasTemperature():
-        point["fields"]["temperature"] = t
+    if beacon.temperature != None:
+        point["fields"]["temperature"] = beacon.temperature
+
+    if beacon.acceleration != None:
+        point["fields"]["accel_x"] = beacon.acceleration.x
+        point["fields"]["accel_y"] = beacon.acceleration.y
+        point["fields"]["accel_z"] = beacon.acceleration.z
+        point["fields"]["accel"]  = beacon.acceleration.magnitude()
+
+    if beacon.uptime != None:
+        point["fields"]["uptime"] = beacon.uptime
+
+    if beacon.battery != None:
+        point["fields"]["battery"] = beacon.battery
+
+    if beacon.rssi != None:
+        point["fields"]["rssi"] = beacon.rssi
 
     return point
 
 def on_scan(beacon, device):
-    print(f"  {device.address}")
     pts = []
-
-    client = InfluxDBClient(server_ip, server_port, influx_user, influx_pwd, influx_db)
-    client.create_database(influx_db)
 
     tim = now = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).timestamp()
 
     strtim = datetime.datetime.utcfromtimestamp(tim).strftime('%Y-%m-%dT%H:%M:%SZ') # ISO 8601 UTC
     pts.append(mkpt(device.address, "bt5-tag", beacon, strtim))
 
+    print(pts)
+
+    client = InfluxDBClient(server_ip, server_port, influx_user, influx_pwd, influx_db)
+    client.create_database(influx_db)
     client.write_points(pts)
 
 async def main(argv):

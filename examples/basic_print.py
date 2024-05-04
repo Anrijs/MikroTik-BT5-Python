@@ -13,14 +13,21 @@ def on_scan(beacon, device):
     print(f"  {device.address}")
     print("---------------------------")
 
-    if beacon.hasTemperature():
+    if beacon.temperature != None:
         print(f"  temperature:  {beacon.temperature:.2f} \u00b0C")
-    print( "  acceleration:")
-    print(f"      x:         {beacon.acceleration.x:.2f} m/s^2")
-    print(f"      y:         {beacon.acceleration.y:.2f} m/s^2")
-    print(f"      z:         {beacon.acceleration.z:.2f} m/s^2")
-    print(f"  uptime:        {beacon.uptime}")
-    print(f"  battery:       {beacon.battery} %")
+
+    if beacon.acceleration != None:
+        print( "  acceleration:")
+        print(f"      x:         {beacon.acceleration.x:.2f} m/s^2")
+        print(f"      y:         {beacon.acceleration.y:.2f} m/s^2")
+        print(f"      z:         {beacon.acceleration.z:.2f} m/s^2")
+
+    if beacon.uptime != None:
+        print(f"  uptime:        {beacon.uptime}")
+
+    if beacon.battery != None:
+        print(f"  battery:       {beacon.battery} %")
+
     print()
 
 async def main(argv):
