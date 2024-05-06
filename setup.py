@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mikrotik-bt5",
-    version="0.0.2b1",
+    version="1.0.0",
     description="MikroTik BT5 scanner",
     long_description=long_description,
     long_description_content_type="text/markdown",
