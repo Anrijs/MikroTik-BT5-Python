@@ -65,7 +65,6 @@ class MikrotikBeacon(BaseBeacon):
             elif version == 1:
                 value_fmt = "<BBHhhhhIBB"
             else:
-                self.version = None
                 return
                 # invalid/unknown version
 
